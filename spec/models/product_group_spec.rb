@@ -25,6 +25,7 @@ describe Spree::ProductGroup do
       it 'should return proper products' do
         product_group.dynamic_products.to_a.should eql([product_1, product_2])
       end
+
     end
 
   end
@@ -93,6 +94,40 @@ describe Spree::ProductGroup do
       product_group.save!
       product_group.name.should == 'Pirate Specials'
       product_group.permalink.should == 'pirate-essentials'
+    end
+
+  end
+
+  describe 'Regression test for #11' do
+
+    context 'with a scope named with_ids' do
+      let!(:product_1) { Factory(:product) }
+      let!(:product_2) { Factory(:product) }
+      let!(:product_3) { Factory(:product) }
+      let!(:product_group) do
+        product_group = Factory(:product_group, :name => "With IDs")
+        product_group.product_scopes.create!(:name => "with_ids", :arguments => ["#{product_1.id},#{product_2.id}"])
+        product_group
+      end
+
+      context 'include?' do
+
+        it 'should return false for products not in the product group' do
+          product_group.include?(product_3).should == false
+        end
+
+        it 'should return true for products in the product group' do
+          product_group.include?(product_2).should == true
+        end
+
+      end
+
+      it 'should return proper products after another product has been updated ' do
+        product_group.update_memberships
+        product_3.save
+        product_group.products.count.should == 2
+      end
+
     end
 
   end
